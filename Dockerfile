@@ -1,32 +1,27 @@
-# Use a small, secure Python base
+# Small, secure base
 FROM python:3.11-slim
 
-# Create working dir
+# Workdir inside the container
 WORKDIR /app
 
-# System deps for building wheels (uvicorn/gunicorn etc. compile cleanly)
+# System deps for wheels (fastapi/uvicorn often fine, but this keeps builds smooth)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy Python deps first (better caching)
+# Install Python deps first (cache friendly)
 COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
+# Copy your app
 COPY . /app
 
-# Cloud Run will set $PORT; default to 8080 for local
+# Cloud Run will inject $PORT; default to 8080 for local runs
 ENV PORT=8080
-# Ensure Python outputs straight to logs
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-# Gunicorn with uvicorn workers: robust for production
-# -k uvicorn.workers.UvicornWorker
-# 2 workers, 1 thread each; tune later in UI
-CMD exec gunicorn features_app:app \
-    -k uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:$PORT \
-    --workers 2 \
-    --threads 1 \
-    --timeout 120
+# Start FastAPI with uvicorn (2 workers is a good default)
+# IMPORTANT: "features_app:app" must match <python_file_without_py>:<fastapi_app_variable>
+CMD exec uvicorn features_app:app --host 0.0.0.0 --port $PORT --workers 2
