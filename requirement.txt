@@ -1,7 +1,11 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.0
-gunicorn==22.0.0
 pydantic==2.8.2
 SQLAlchemy==2.0.35
 google-cloud-firestore==2.16.0
 python-dotenv==1.0.1
+# Optional if used:
+openai==1.51.2
+googletrans==4.0.0rc1
+psycopg[binary]==3.2.3      # Only if using Postgres / Cloud SQL
+pymysql==1.1.1              # Only if using MySQL / Cloud SQL
